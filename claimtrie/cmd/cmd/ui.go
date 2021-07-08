@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/btcsuite/btcd/claimtrie/change"
 	"github.com/btcsuite/btcd/claimtrie/node"
 )
 
@@ -14,25 +13,25 @@ var status = map[node.Status]string{
 	node.Deactivated: "Deactivated",
 }
 
-func changeName(c change.ChangeType) string {
+func changeName(c node.ChangeType) string {
 	switch c { // can't this be done via reflection?
-	case change.AddClaim:
+	case node.AddClaim:
 		return "AddClaim"
-	case change.SpendClaim:
+	case node.SpendClaim:
 		return "SpendClaim"
-	case change.UpdateClaim:
+	case node.UpdateClaim:
 		return "UpdateClaim"
-	case change.AddSupport:
+	case node.AddSupport:
 		return "AddSupport"
-	case change.SpendSupport:
+	case node.SpendSupport:
 		return "SpendSupport"
 	}
 	return "Unknown"
 }
 
-func showChange(chg change.Change) {
+func showChange(chg node.Change) {
 	fmt.Printf(">>> Height: %6d: %s for %04s, %d, %s\n",
-		chg.Height, changeName(chg.Type), chg.ClaimID, chg.Amount, chg.OutPoint)
+		chg.Height, changeName(chg.Type), chg.ClaimID.Hex(), chg.Amount, chg.OutPoint)
 }
 
 func showClaim(c *node.Claim, n *node.Node) {
@@ -42,12 +41,12 @@ func showClaim(c *node.Claim, n *node.Node) {
 	}
 
 	fmt.Printf("%s  C  ID: %s, TXO: %s\n   %5d/%-5d, Status: %9s, Amount: %15d, Effective Amount: %15d\n",
-		mark, c.ClaimID, c.OutPoint, c.AcceptedAt, c.ActiveAt, status[c.Status], c.Amount, c.EffectiveAmount(n.Supports))
+		mark, c.ClaimID.Hex(), c.OutPoint, c.AcceptedAt, c.ActiveAt, status[c.Status], c.Amount, c.EffectiveAmount(n.Supports))
 }
 
 func showSupport(c *node.Claim) {
 	fmt.Printf("    S id: %s, op: %s, %5d/%-5d, %9s, amt: %15d\n",
-		c.ClaimID, c.OutPoint, c.AcceptedAt, c.ActiveAt, status[c.Status], c.Amount)
+		c.ClaimID.Hex(), c.OutPoint, c.AcceptedAt, c.ActiveAt, status[c.Status], c.Amount)
 }
 
 func showNode(n *node.Node) {

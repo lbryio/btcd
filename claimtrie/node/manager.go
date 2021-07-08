@@ -7,13 +7,12 @@ import (
 	"strconv"
 
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
-	"github.com/btcsuite/btcd/claimtrie/change"
 	"github.com/btcsuite/btcd/claimtrie/param"
 	"github.com/btcsuite/btcd/wire"
 )
 
 type Manager interface {
-	AppendChange(chg change.Change) error
+	AppendChange(chg Change) error
 	IncrementHeightTo(height int32) ([][]byte, error)
 	DecrementHeightTo(affectedNames [][]byte, height int32) error
 	Height() int32
@@ -30,7 +29,7 @@ type BaseManager struct {
 
 	height  int32
 	cache   map[string]*Node
-	changes []change.Change
+	changes []Change
 }
 
 func NewBaseManager(repo Repo) (Manager, error) {
@@ -73,7 +72,7 @@ func (nm *BaseManager) Node(name []byte) (*Node, error) {
 
 // newNodeFromChanges returns a new Node constructed from the changes.
 // The changes must preserve their order received.
-func (nm *BaseManager) newNodeFromChanges(changes []change.Change, height int32) (*Node, error) {
+func (nm *BaseManager) newNodeFromChanges(changes []Change, height int32) (*Node, error) {
 
 	if len(changes) == 0 {
 		return nil, nil
@@ -110,7 +109,7 @@ func (nm *BaseManager) newNodeFromChanges(changes []change.Change, height int32)
 	return n.AdjustTo(lastChange.Height, height, lastChange.Name), nil
 }
 
-func (nm *BaseManager) AppendChange(chg change.Change) error {
+func (nm *BaseManager) AppendChange(chg Change) error {
 
 	if len(nm.changes) <= 0 {
 		// this little code block is acting as a "block complete" method
@@ -171,7 +170,7 @@ func (nm *BaseManager) DecrementHeightTo(affectedNames [][]byte, height int32) e
 	return nil
 }
 
-func (nm *BaseManager) getDelayForName(n *Node, chg change.Change) int32 {
+func (nm *BaseManager) getDelayForName(n *Node, chg Change) int32 {
 	hasBest := n.BestClaim != nil // && n.BestClaim.Status == Activated
 	if hasBest && n.BestClaim.ClaimID == chg.ClaimID {
 		return 0
@@ -195,7 +194,7 @@ func (nm *BaseManager) getDelayForName(n *Node, chg change.Change) int32 {
 }
 
 // decideIfWorkaroundNeeded handles bugs that existed in previous versions
-func (nm *BaseManager) decideIfWorkaroundNeeded(n *Node, chg change.Change) bool {
+func (nm *BaseManager) decideIfWorkaroundNeeded(n *Node, chg Change) bool {
 
 	if chg.Height >= param.MaxRemovalWorkaroundHeight {
 		// TODO: hard fork this out; it's a bug from previous versions:
@@ -270,7 +269,7 @@ func (nm *BaseManager) Close() error {
 func (nm *BaseManager) hasChildrenButNoSelf(name []byte, height int32, required int) bool {
 	c := map[byte]bool{}
 
-	nm.repo.IterateChildren(name, func(changes []change.Change) bool {
+	nm.repo.IterateChildren(name, func(changes []Change) bool {
 		// if the key is unseen, generate a node for it to height
 		// if that node is active then increase the count
 		if len(changes) == 0 {

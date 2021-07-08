@@ -3,14 +3,36 @@ package noderepo
 import (
 	"bytes"
 	"fmt"
-	"github.com/btcsuite/btcd/claimtrie/change"
+	"reflect"
+	"sort"
+
+	"github.com/btcsuite/btcd/claimtrie/node"
 	"github.com/cockroachdb/pebble"
 	"github.com/vmihailenco/msgpack/v5"
-	"sort"
 )
 
 type Pebble struct {
 	db *pebble.DB
+}
+
+func init() {
+	claimEncoder := func (e *msgpack.Encoder, v reflect.Value) error {
+		claim := v.Interface().(node.ClaimID)
+		return e.EncodeString(claim.String())
+	}
+	claimDecoder := func (e *msgpack.Decoder, v reflect.Value) error {
+		s, err := e.DecodeString()
+		if err != nil {
+			return err
+		}
+		id, err := node.NewIDFromString(s)
+		if err != nil {
+			return err
+		}
+		v.Set(reflect.ValueOf(id))
+		return nil
+	}
+	msgpack.Register(node.ClaimID{}, claimEncoder, claimDecoder)
 }
 
 func NewPebble(path string) (*Pebble, error) {
@@ -26,7 +48,7 @@ func NewPebble(path string) (*Pebble, error) {
 }
 
 // AppendChanges makes an assumption that anything you pass to it is newer than what was saved before.
-func (repo *Pebble) AppendChanges(changes []change.Change) error {
+func (repo *Pebble) AppendChanges(changes []node.Change) error {
 
 	batch := repo.db.NewBatch()
 
@@ -50,7 +72,7 @@ func (repo *Pebble) AppendChanges(changes []change.Change) error {
 	return err
 }
 
-func (repo *Pebble) LoadChanges(name []byte) ([]change.Change, error) {
+func (repo *Pebble) LoadChanges(name []byte) ([]node.Change, error) {
 
 	data, closer, err := repo.db.Get(name)
 	if err != nil && err != pebble.ErrNotFound {
@@ -63,15 +85,15 @@ func (repo *Pebble) LoadChanges(name []byte) ([]change.Change, error) {
 	return unmarshalChanges(data)
 }
 
-func unmarshalChanges(data []byte) ([]change.Change, error) {
-	var changes []change.Change
+func unmarshalChanges(data []byte) ([]node.Change, error) {
+	var changes []node.Change
 	dec := msgpack.GetDecoder()
 	defer msgpack.PutDecoder(dec)
 
 	reader := bytes.NewReader(data)
 	dec.Reset(reader)
 	for reader.Len() > 0 {
-		var chg change.Change
+		var chg node.Change
 		err := dec.Decode(&chg)
 		if err != nil {
 			return nil, fmt.Errorf("msgpack unmarshal: %w", err)
@@ -106,7 +128,7 @@ func (repo *Pebble) DropChanges(name []byte, finalHeight int32) error {
 	return repo.AppendChanges(changes[:i])
 }
 
-func (repo *Pebble) IterateChildren(name []byte, f func(changes []change.Change) bool) {
+func (repo *Pebble) IterateChildren(name []byte, f func(changes []node.Change) bool) {
 	end := bytes.NewBuffer(nil)
 	end.Write(name)
 	end.Write(bytes.Repeat([]byte{255, 255, 255, 255}, 64))

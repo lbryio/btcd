@@ -6,7 +6,7 @@ type ClaimList []*Claim
 
 type comparator func(c *Claim) bool
 
-func byID(id string) comparator {
+func byID(id ClaimID) comparator {
 	return func(c *Claim) bool {
 		return c.ClaimID == id
 	}

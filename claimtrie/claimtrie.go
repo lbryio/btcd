@@ -9,7 +9,6 @@ import (
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/claimtrie/block"
 	"github.com/btcsuite/btcd/claimtrie/block/blockrepo"
-	"github.com/btcsuite/btcd/claimtrie/change"
 	"github.com/btcsuite/btcd/claimtrie/config"
 	"github.com/btcsuite/btcd/claimtrie/merkletrie"
 	"github.com/btcsuite/btcd/claimtrie/merkletrie/merkletrierepo"
@@ -138,12 +137,12 @@ func New() (*ClaimTrie, error) {
 // AddClaim adds a Claim to the ClaimTrie.
 func (ct *ClaimTrie) AddClaim(name []byte, op wire.OutPoint, id node.ClaimID, amt int64, val []byte) error {
 
-	chg := change.Change{
-		Type:     change.AddClaim,
+	chg := node.Change{
+		Type:     node.AddClaim,
 		Name:     name,
 		OutPoint: op.String(),
 		Amount:   amt,
-		ClaimID:  id.String(),
+		ClaimID:  id,
 		Value:    val,
 	}
 
@@ -153,12 +152,12 @@ func (ct *ClaimTrie) AddClaim(name []byte, op wire.OutPoint, id node.ClaimID, am
 // UpdateClaim updates a Claim in the ClaimTrie.
 func (ct *ClaimTrie) UpdateClaim(name []byte, op wire.OutPoint, amt int64, id node.ClaimID, val []byte) error {
 
-	chg := change.Change{
-		Type:     change.UpdateClaim,
+	chg := node.Change{
+		Type:     node.UpdateClaim,
 		Name:     name,
 		OutPoint: op.String(),
 		Amount:   amt,
-		ClaimID:  id.String(),
+		ClaimID:  id,
 		Value:    val,
 	}
 
@@ -168,11 +167,11 @@ func (ct *ClaimTrie) UpdateClaim(name []byte, op wire.OutPoint, amt int64, id no
 // SpendClaim spends a Claim in the ClaimTrie.
 func (ct *ClaimTrie) SpendClaim(name []byte, op wire.OutPoint, id node.ClaimID) error {
 
-	chg := change.Change{
-		Type:     change.SpendClaim,
+	chg := node.Change{
+		Type:     node.SpendClaim,
 		Name:     name,
 		OutPoint: op.String(),
-		ClaimID:  id.String(),
+		ClaimID:  id,
 	}
 
 	return ct.forwardNodeChange(chg)
@@ -181,12 +180,12 @@ func (ct *ClaimTrie) SpendClaim(name []byte, op wire.OutPoint, id node.ClaimID) 
 // AddSupport adds a Support to the ClaimTrie.
 func (ct *ClaimTrie) AddSupport(name []byte, value []byte, op wire.OutPoint, amt int64, id node.ClaimID) error {
 
-	chg := change.Change{
-		Type:     change.AddSupport,
+	chg := node.Change{
+		Type:     node.AddSupport,
 		Name:     name,
 		OutPoint: op.String(),
 		Amount:   amt,
-		ClaimID:  id.String(),
+		ClaimID:  id,
 		Value:    value,
 	}
 
@@ -196,11 +195,11 @@ func (ct *ClaimTrie) AddSupport(name []byte, value []byte, op wire.OutPoint, amt
 // SpendSupport spends a Support in the ClaimTrie.
 func (ct *ClaimTrie) SpendSupport(name []byte, op wire.OutPoint, id node.ClaimID) error {
 
-	chg := change.Change{
-		Type:     change.SpendSupport,
+	chg := node.Change{
+		Type:     node.SpendSupport,
 		Name:     name,
 		OutPoint: op.String(),
-		ClaimID:  id.String(),
+		ClaimID:  id,
 	}
 
 	return ct.forwardNodeChange(chg)
@@ -353,7 +352,7 @@ func (ct *ClaimTrie) Close() error {
 	return nil
 }
 
-func (ct *ClaimTrie) forwardNodeChange(chg change.Change) error {
+func (ct *ClaimTrie) forwardNodeChange(chg node.Change) error {
 
 	chg.Height = ct.Height() + 1
 

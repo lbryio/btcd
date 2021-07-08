@@ -31,18 +31,29 @@ func NewClaimID(op wire.OutPoint) ClaimID {
 }
 
 // NewIDFromString returns a Claim ID from a string.
-func NewIDFromString(s string) (ClaimID, error) {
+func NewIDFromString(s string) (id ClaimID, err error) {
 
-	var id ClaimID
-	_, err := hex.Decode(id[:], []byte(s))
+	if len(s) == 40 {
+		_, err = hex.Decode(id[:], []byte(s))
+	} else {
+		copy(id[:], s)
+	}
 	for i, j := 0, len(id)-1; i < j; i, j = i+1, j-1 {
 		id[i], id[j] = id[j], id[i]
 	}
-
 	return id, err
 }
 
 func (id ClaimID) String() string {
+
+	for i, j := 0, len(id)-1; i < j; i, j = i+1, j-1 {
+		id[i], id[j] = id[j], id[i]
+	}
+
+	return string(id[:])
+}
+
+func (id ClaimID) Hex() string {
 
 	for i, j := 0, len(id)-1; i < j; i, j = i+1, j-1 {
 		id[i], id[j] = id[j], id[i]
@@ -62,7 +73,7 @@ const (
 // Claim defines a structure of stake, which could be a Claim or Support.
 type Claim struct {
 	OutPoint   wire.OutPoint
-	ClaimID    string
+	ClaimID    ClaimID
 	Amount     int64
 	AcceptedAt int32 // when arrived (aka, originally landed in block)
 	ActiveAt   int32 // AcceptedAt + actual delay

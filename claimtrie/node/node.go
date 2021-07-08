@@ -5,7 +5,6 @@ import (
 	"math"
 	"sort"
 
-	"github.com/btcsuite/btcd/claimtrie/change"
 	"github.com/btcsuite/btcd/claimtrie/param"
 )
 
@@ -24,7 +23,7 @@ func New() *Node {
 	return &Node{}
 }
 
-func (n *Node) ApplyChange(chg change.Change, delay int32) error {
+func (n *Node) ApplyChange(chg Change, delay int32) error {
 
 	out := NewOutPointFromString(chg.OutPoint)
 
@@ -34,7 +33,7 @@ func (n *Node) ApplyChange(chg change.Change, delay int32) error {
 	}
 
 	switch chg.Type {
-	case change.AddClaim:
+	case AddClaim:
 		c := &Claim{
 			OutPoint:   *out,
 			Amount:     chg.Amount,
@@ -50,7 +49,7 @@ func (n *Node) ApplyChange(chg change.Change, delay int32) error {
 		}
 		n.Claims = append(n.Claims, c)
 
-	case change.SpendClaim:
+	case SpendClaim:
 		c := n.Claims.find(byOut(*out))
 		if c != nil {
 			c.setStatus(Deactivated)
@@ -62,7 +61,7 @@ func (n *Node) ApplyChange(chg change.Change, delay int32) error {
 		// apparently it's legit to be absent in the map:
 		// 'two' at 481100, 36a719a156a1df178531f3c712b8b37f8e7cc3b36eea532df961229d936272a1:0
 
-	case change.UpdateClaim:
+	case UpdateClaim:
 		// Find and remove the claim, which has just been spent.
 		c := n.Claims.find(byID(chg.ClaimID))
 		if c != nil && c.Status == Deactivated {
@@ -80,7 +79,7 @@ func (n *Node) ApplyChange(chg change.Change, delay int32) error {
 		} else {
 			fmt.Printf("Updating claim but missing existing claim with ID %s", chg.ClaimID)
 		}
-	case change.AddSupport:
+	case AddSupport:
 		n.Supports = append(n.Supports, &Claim{
 			OutPoint:   *out,
 			Amount:     chg.Amount,
@@ -91,7 +90,7 @@ func (n *Node) ApplyChange(chg change.Change, delay int32) error {
 			VisibleAt:  visibleAt,
 		})
 
-	case change.SpendSupport:
+	case SpendSupport:
 		s := n.Supports.find(byOut(*out))
 		if s != nil {
 			s.setStatus(Deactivated)

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 
-	"github.com/btcsuite/btcd/claimtrie/change"
 	"github.com/btcsuite/btcd/claimtrie/param"
 )
 
@@ -20,7 +19,7 @@ func NewNormalizingManager(baseManager Manager) Manager {
 	}
 }
 
-func (nm *NormalizingManager) AppendChange(chg change.Change) error {
+func (nm *NormalizingManager) AppendChange(chg Change) error {
 	chg.Name = NormalizeIfNecessary(chg.Name, chg.Height)
 	return nm.Manager.AppendChange(chg)
 }
@@ -79,8 +78,8 @@ func (nm *NormalizingManager) addNormalizationForkChangesIfNecessary(height int3
 			return true
 		}
 		for _, c := range n.Claims {
-			nm.Manager.AppendChange(change.Change{
-				Type:          change.AddClaim,
+			nm.Manager.AppendChange(Change{
+				Type:          AddClaim,
 				Name:          norm,
 				Height:        c.AcceptedAt,
 				OutPoint:      c.OutPoint.String(),
@@ -90,16 +89,16 @@ func (nm *NormalizingManager) addNormalizationForkChangesIfNecessary(height int3
 				ActiveHeight:  c.ActiveAt, // necessary to match the old hash
 				VisibleHeight: height,     // necessary to match the old hash; it would have been much better without
 			})
-			nm.Manager.AppendChange(change.Change{
-				Type:     change.SpendClaim,
+			nm.Manager.AppendChange(Change{
+				Type:     SpendClaim,
 				Name:     clone,
 				Height:   height,
 				OutPoint: c.OutPoint.String(),
 			})
 		}
 		for _, c := range n.Supports {
-			nm.Manager.AppendChange(change.Change{
-				Type:          change.AddSupport,
+			nm.Manager.AppendChange(Change{
+				Type:          AddSupport,
 				Name:          norm,
 				Height:        c.AcceptedAt,
 				OutPoint:      c.OutPoint.String(),
@@ -109,8 +108,8 @@ func (nm *NormalizingManager) addNormalizationForkChangesIfNecessary(height int3
 				ActiveHeight:  c.ActiveAt,
 				VisibleHeight: height,
 			})
-			nm.Manager.AppendChange(change.Change{
-				Type:     change.SpendSupport,
+			nm.Manager.AppendChange(Change{
+				Type:     SpendSupport,
 				Name:     clone,
 				Height:   height,
 				OutPoint: c.OutPoint.String(),

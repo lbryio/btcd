@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/btcsuite/btcd/claimtrie/change"
 	"github.com/btcsuite/btcd/claimtrie/node/noderepo"
 	"github.com/btcsuite/btcd/claimtrie/param"
 	"github.com/btcsuite/btcd/wire"
@@ -55,7 +54,7 @@ func TestSimpleAddClaim(t *testing.T) {
 	_, err = m.IncrementHeightTo(10)
 	r.NoError(err)
 
-	chg := change.New(change.AddClaim).SetName(name1).SetOutPoint(out1.String()).SetHeight(11)
+	chg := NewChange(AddClaim).SetName(name1).SetOutPoint(out1.String()).SetHeight(11)
 	err = m.AppendChange(chg)
 	r.NoError(err)
 	_, err = m.IncrementHeightTo(11)
@@ -100,14 +99,14 @@ func TestNodeSort(t *testing.T) {
 	r.True(OutPointLess(*out1, *out3))
 
 	n := New()
-	n.Claims = append(n.Claims, &Claim{OutPoint: *out1, AcceptedAt: 3, Amount: 3, ClaimID: "a"})
-	n.Claims = append(n.Claims, &Claim{OutPoint: *out2, AcceptedAt: 3, Amount: 3, ClaimID: "b"})
+	n.Claims = append(n.Claims, &Claim{OutPoint: *out1, AcceptedAt: 3, Amount: 3, ClaimID: ClaimID{1}})
+	n.Claims = append(n.Claims, &Claim{OutPoint: *out2, AcceptedAt: 3, Amount: 3, ClaimID: ClaimID{2}})
 	n.handleExpiredAndActivated(3)
 	n.updateTakeoverHeight(3, []byte{}, true)
 
 	r.Equal(n.Claims.find(byOut(*out1)).OutPoint.String(), n.BestClaim.OutPoint.String())
 
-	n.Claims = append(n.Claims, &Claim{OutPoint: *out3, AcceptedAt: 3, Amount: 3, ClaimID: "c"})
+	n.Claims = append(n.Claims, &Claim{OutPoint: *out3, AcceptedAt: 3, Amount: 3, ClaimID: ClaimID{3}})
 	n.handleExpiredAndActivated(3)
 	n.updateTakeoverHeight(3, []byte{}, true)
 	r.Equal(n.Claims.find(byOut(*out1)).OutPoint.String(), n.BestClaim.OutPoint.String())
@@ -120,10 +119,10 @@ func TestClaimSort(t *testing.T) {
 	param.ExtendedClaimExpirationTime = 1000
 
 	n := New()
-	n.Claims = append(n.Claims, &Claim{OutPoint: *out2, AcceptedAt: 3, Amount: 3, ClaimID: "b"})
-	n.Claims = append(n.Claims, &Claim{OutPoint: *out3, AcceptedAt: 3, Amount: 2, ClaimID: "c"})
-	n.Claims = append(n.Claims, &Claim{OutPoint: *out3, AcceptedAt: 4, Amount: 2, ClaimID: "d"})
-	n.Claims = append(n.Claims, &Claim{OutPoint: *out1, AcceptedAt: 3, Amount: 4, ClaimID: "a"})
+	n.Claims = append(n.Claims, &Claim{OutPoint: *out2, AcceptedAt: 3, Amount: 3, ClaimID: ClaimID{2}})
+	n.Claims = append(n.Claims, &Claim{OutPoint: *out3, AcceptedAt: 3, Amount: 2, ClaimID: ClaimID{3}})
+	n.Claims = append(n.Claims, &Claim{OutPoint: *out3, AcceptedAt: 4, Amount: 2, ClaimID: ClaimID{4}})
+	n.Claims = append(n.Claims, &Claim{OutPoint: *out1, AcceptedAt: 3, Amount: 4, ClaimID: ClaimID{1}})
 	n.SortClaims()
 
 	r.Equal(int64(4), n.Claims[0].Amount)

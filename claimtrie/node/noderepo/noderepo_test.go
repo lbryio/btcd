@@ -3,7 +3,6 @@ package noderepo
 import (
 	"testing"
 
-	"github.com/btcsuite/btcd/claimtrie/change"
 	"github.com/btcsuite/btcd/claimtrie/node"
 
 	"github.com/stretchr/testify/require"
@@ -39,49 +38,49 @@ func testNodeRepo(t *testing.T, repo node.Repo, setup, cleanup func()) {
 
 	r := require.New(t)
 
-	chg := change.New(change.AddClaim).SetName(testNodeName1).SetOutPoint(opStr1)
+	chg := node.NewChange(node.AddClaim).SetName(testNodeName1).SetOutPoint(opStr1)
 
 	testcases := []struct {
 		name     string
 		height   int32
-		changes  []change.Change
-		expected []change.Change
+		changes  []node.Change
+		expected []node.Change
 	}{
 		{
 			"test 1",
 			1,
-			[]change.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
-			[]change.Change{chg.SetHeight(1)},
+			[]node.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
+			[]node.Change{chg.SetHeight(1)},
 		},
 		{
 			"test 2",
 			2,
-			[]change.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
-			[]change.Change{chg.SetHeight(1)},
+			[]node.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
+			[]node.Change{chg.SetHeight(1)},
 		},
 		{
 			"test 3",
 			3,
-			[]change.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
-			[]change.Change{chg.SetHeight(1), chg.SetHeight(3)},
+			[]node.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
+			[]node.Change{chg.SetHeight(1), chg.SetHeight(3)},
 		},
 		{
 			"test 4",
 			4,
-			[]change.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
-			[]change.Change{chg.SetHeight(1), chg.SetHeight(3)},
+			[]node.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
+			[]node.Change{chg.SetHeight(1), chg.SetHeight(3)},
 		},
 		{
 			"test 5",
 			5,
-			[]change.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
-			[]change.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
+			[]node.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
+			[]node.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
 		},
 		{
 			"test 6",
 			6,
-			[]change.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
-			[]change.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
+			[]node.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
+			[]node.Change{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
 		},
 	}
 
@@ -102,26 +101,26 @@ func testNodeRepo(t *testing.T, repo node.Repo, setup, cleanup func()) {
 	testcases2 := []struct {
 		name     string
 		height   int32
-		changes  [][]change.Change
-		expected []change.Change
+		changes  [][]node.Change
+		expected []node.Change
 	}{
 		{
 			"Save in 2 batches, and load up to 1",
 			1,
-			[][]change.Change{
+			[][]node.Change{
 				{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
 				{chg.SetHeight(6), chg.SetHeight(8), chg.SetHeight(9)},
 			},
-			[]change.Change{chg.SetHeight(1)},
+			[]node.Change{chg.SetHeight(1)},
 		},
 		{
 			"Save in 2 batches, and load up to 9",
 			9,
-			[][]change.Change{
+			[][]node.Change{
 				{chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5)},
 				{chg.SetHeight(6), chg.SetHeight(8), chg.SetHeight(9)},
 			},
-			[]change.Change{
+			[]node.Change{
 				chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5),
 				chg.SetHeight(6), chg.SetHeight(8), chg.SetHeight(9),
 			},
@@ -129,12 +128,12 @@ func testNodeRepo(t *testing.T, repo node.Repo, setup, cleanup func()) {
 		{
 			"Save in 3 batches, and load up to 8",
 			8,
-			[][]change.Change{
+			[][]node.Change{
 				{chg.SetHeight(1), chg.SetHeight(3)},
 				{chg.SetHeight(5)},
 				{chg.SetHeight(6), chg.SetHeight(8), chg.SetHeight(9)},
 			},
-			[]change.Change{
+			[]node.Change{
 				chg.SetHeight(1), chg.SetHeight(3), chg.SetHeight(5),
 				chg.SetHeight(6), chg.SetHeight(8),
 			},
@@ -169,7 +168,7 @@ func TestIterator(t *testing.T) {
 		r.NoError(err)
 	}()
 
-	creation := []change.Change{
+	creation := []node.Change{
 		{Name: []byte("test\x00"), Height: 5},
 		{Name: []byte("test\x00\x00"), Height: 5},
 		{Name: []byte("test\x00b"), Height: 5},
@@ -179,8 +178,8 @@ func TestIterator(t *testing.T) {
 	err = repo.AppendChanges(creation)
 	r.NoError(err)
 
-	var received []change.Change
-	repo.IterateChildren([]byte{}, func(changes []change.Change) bool {
+	var received []node.Change
+	repo.IterateChildren([]byte{}, func(changes []node.Change) bool {
 		received = append(received, changes...)
 		return true
 	})

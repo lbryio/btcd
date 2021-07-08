@@ -1,4 +1,4 @@
-package change
+package node
 
 type ChangeType int
 
@@ -15,7 +15,7 @@ type Change struct {
 	Height int32
 
 	Name     []byte
-	ClaimID  string
+	ClaimID  ClaimID
 	OutPoint string
 	Amount   int64
 	Value    []byte
@@ -24,7 +24,7 @@ type Change struct {
 	VisibleHeight int32
 }
 
-func New(typ ChangeType) Change {
+func NewChange(typ ChangeType) Change {
 	return Change{Type: typ}
 }
 
@@ -35,11 +35,6 @@ func (c Change) SetHeight(height int32) Change {
 
 func (c Change) SetName(name []byte) Change {
 	c.Name = name
-	return c
-}
-
-func (c Change) SetClaimID(claimID string) Change {
-	c.ClaimID = claimID
 	return c
 }
 
