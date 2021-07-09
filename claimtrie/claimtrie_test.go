@@ -34,7 +34,7 @@ func TestFixedHashes(t *testing.T) {
 	r := require.New(t)
 
 	setup(t)
-	ct, err := New()
+	ct, err := New(true)
 	r.NoError(err)
 	defer func() {
 		err = ct.Close()
@@ -74,7 +74,7 @@ func TestNormalizationFork(t *testing.T) {
 
 	setup(t)
 	param.NormalizedNameForkHeight = 2
-	ct, err := New()
+	ct, err := New(true)
 	r.NoError(err)
 	r.NotNil(ct)
 	defer func() {
@@ -138,7 +138,7 @@ func TestActivationsOnNormalizationFork(t *testing.T) {
 
 	setup(t)
 	param.NormalizedNameForkHeight = 4
-	ct, err := New()
+	ct, err := New(true)
 	r.NoError(err)
 	r.NotNil(ct)
 	defer func() {
@@ -184,7 +184,7 @@ func TestNormalizationSortOrder(t *testing.T) {
 	// alas, it's now part of our history; we hereby test it to keep it that way
 	setup(t)
 	param.NormalizedNameForkHeight = 2
-	ct, err := New()
+	ct, err := New(true)
 	r.NoError(err)
 	r.NotNil(ct)
 	defer func() {
@@ -226,4 +226,40 @@ func verifyBestIndex(t *testing.T, ct *ClaimTrie, name string, idx uint32, claim
 	if claims > 0 {
 		r.Equal(idx, n.BestClaim.OutPoint.Index)
 	}
+}
+
+func TestRebuild(t *testing.T) {
+	r := require.New(t)
+	setup(t)
+	ct, err := New(true)
+	r.NoError(err)
+	r.NotNil(ct)
+	defer func() {
+		err := ct.Close()
+		r.NoError(err)
+	}()
+
+	hash := chainhash.HashH([]byte{1, 2, 3})
+
+	o1 := wire.OutPoint{Hash: hash, Index: 1}
+	err = ct.AddClaim([]byte("test1"), o1, node.NewClaimID(o1), 1, nil)
+	r.NoError(err)
+
+	o2 := wire.OutPoint{Hash: hash, Index: 2}
+	err = ct.AddClaim([]byte("test2"), o2, node.NewClaimID(o2), 2, nil)
+	r.NoError(err)
+
+	err = ct.AppendBlock()
+	r.NoError(err)
+
+	m := ct.MerkleHash()
+	r.NotNil(m)
+	r.NotEqual(*merkletrie.EmptyTrieHash, *m)
+
+	ct.merkleTrie = merkletrie.NewRamTrie(ct.nodeManager)
+	ct.merkleTrie.SetRoot(m, nil)
+
+	m2 := ct.MerkleHash()
+	r.NotNil(m2)
+	r.Equal(*m, *m2)
 }

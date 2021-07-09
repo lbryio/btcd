@@ -1814,13 +1814,13 @@ func New(config *Config) (*BlockChain, error) {
 		return nil, err
 	}
 
-	ct, err := claimtrie.New()
+	ct, err := claimtrie.New(true) // TODO: add a config paramter for this
 	if err != nil {
 		return nil, err
 	}
 	b.claimTrie = ct
 
-	// ct.ResetHeight(760140) // TODO: add an optional CLI parameter for this
+	// ct.ResetHeight(658305) // TODO: add an optional CLI parameter for this
 
 	err = rebuildMissingClaimTrieData(&b, config.Interrupt)
 	if err != nil {
