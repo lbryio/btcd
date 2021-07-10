@@ -3,9 +3,6 @@ package claimtrie
 import (
 	"bytes"
 	"fmt"
-	"runtime"
-	"sort"
-
 	"github.com/btcsuite/btcd/chaincfg/chainhash"
 	"github.com/btcsuite/btcd/claimtrie/block"
 	"github.com/btcsuite/btcd/claimtrie/block/blockrepo"
@@ -19,6 +16,8 @@ import (
 	"github.com/btcsuite/btcd/claimtrie/temporal"
 	"github.com/btcsuite/btcd/claimtrie/temporal/temporalrepo"
 	"github.com/btcsuite/btcd/wire"
+	"runtime"
+	"sort"
 )
 
 // ClaimTrie implements a Merkle Trie supporting linear history of commits.
@@ -111,18 +110,6 @@ func New(useRamTrie bool) (*ClaimTrie, error) {
 		return nil, fmt.Errorf("load blocks: %w", err)
 	}
 
-	if previousHeight > 0 {
-		hash, err := blockRepo.Get(previousHeight)
-		if err != nil {
-			return nil, fmt.Errorf("get hash: %w", err)
-		}
-		_, err = nodeManager.IncrementHeightTo(previousHeight)
-		if err != nil {
-			return nil, fmt.Errorf("node manager init: %w", err)
-		}
-		trie.SetRoot(hash, nil) // keep this after IncrementHeightTo
-	}
-
 	ct := &ClaimTrie{
 		blockRepo:    blockRepo,
 		temporalRepo: temporalRepo,
@@ -135,6 +122,25 @@ func New(useRamTrie bool) (*ClaimTrie, error) {
 		reportedBlockRepo: reportedBlockRepo,
 
 		cleanups: cleanups,
+	}
+
+	if previousHeight > 0 {
+		hash, err := blockRepo.Get(previousHeight)
+		if err != nil {
+			ct.Close() // TODO: the cleanups aren't run when we exit with an err above here (but should be)
+			return nil, fmt.Errorf("get hash: %w", err)
+		}
+		_, err = nodeManager.IncrementHeightTo(previousHeight)
+		if err != nil {
+			ct.Close()
+			return nil, fmt.Errorf("node manager init: %w", err)
+		}
+		trie.SetRoot(hash, nil) // keep this after IncrementHeightTo
+
+		if !ct.MerkleHash().IsEqual(hash) {
+			ct.Close()
+			return nil, fmt.Errorf("unable to restore the claim hash to %s at height %d", hash.String(), previousHeight)
+		}
 	}
 
 	return ct, nil
