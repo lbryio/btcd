@@ -1814,7 +1814,7 @@ func New(config *Config) (*BlockChain, error) {
 		return nil, err
 	}
 
-	ct, err := claimtrie.New(true) // TODO: add a config paramter for this
+	ct, err := claimtrie.New(true) // TODO: add a config paramter for this, pass in config.interrupt
 	if err != nil {
 		return nil, err
 	}
